@@ -1,0 +1,12 @@
+import java_cup.runtime.*;
+
+terminal PLAN;
+terminal String STRING;
+
+non terminal plan;
+
+start with plan;
+
+plan ::= PLAN STRING:n
+         {: System.out.println("Plan reconocido: " + n); :}
+       ;
