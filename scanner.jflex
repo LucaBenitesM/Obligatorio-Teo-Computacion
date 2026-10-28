@@ -68,6 +68,7 @@ LETRA=[a-zA-Z]
 ","    { return new Symbol(sym.COMA, yyline+1, 0); }
 
 {DIGITO}{1,2}"/"{DIGITO}{1,2}"/"{DIGITO}{4}   { return new Symbol(sym.FECHA_VAL, yyline+1, 0, yytext()); }
+
 {LETRA}+        { return new Symbol(sym.ID, yyline+1, 0, yytext()); }
 {DIGITO}+            { return new Symbol(sym.NUM, yyline+1, 0, Integer.valueOf(yytext()));}
 \"[^\"\n]*\"     { return new Symbol(sym.STRING, yyline+1, 0, yytext()); }
