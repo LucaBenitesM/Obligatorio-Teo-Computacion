@@ -4,27 +4,32 @@ import java_cup.runtime.*;
 %class Lexer
 %cup
 %line
+%column
+%unicode
 
 DIGITO =[0-9]
-LETRA=[a-zA-Z]
+LETRA=[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ]
 
 %%
 
 "PLAN"           { return new Symbol(sym.PLAN, yyline+1, 0); }
+"Nivel:"         { return new Symbol(sym.NIVEL, yyline+1, 0); }
 "Semanas:"         { return new Symbol(sym.SEMANAS, yyline+1, 0);}
 "Objetivos:"     { return new Symbol(sym.OBJETIVOS, yyline+1,0);}
 "Profesor:"          { return new Symbol(sym.PROFESOR, yyline+1,0);}
 "Fecha:"            { return new Symbol(sym.FECHA, yyline+1,0);}
 "RUTINA"        { return new Symbol(sym.RUTINA, yyline+1,0);}
-"Dia:"        { return new Symbol(sym.DIA, yyline+1,0);}
+"Día:"|"Dia:"  { return new Symbol(sym.DIA, yyline+1,0);}
 "Calentamiento:"        { return new Symbol(sym.CALENTAMIENTO, yyline+1,0);}
 "EJERCICIOS:"        { return new Symbol(sym.EJERCICIOS, yyline+1,0);}
-"Duracion:"        { return new Symbol(sym.DURACION, yyline+1,0);}
-"Musculos:"        { return new Symbol(sym.MUSCULOS, yyline+1,0);}
+"Duración:"|"Duracion:" { return new Symbol(sym.DURACION, yyline+1,0);}
+"Músculos:"|"Musculos:" { return new Symbol(sym.MUSCULOS, yyline+1,0);}
 "Variantes:"        { return new Symbol(sym.VARIANTES, yyline+1,0);}
 "Equipamiento:"      {return new Symbol(sym.EQUIPAMIENTO, yyline+1,0);}
 "Obs:"      {return new Symbol(sym.OBS, yyline+1,0);}
+"Observaciones:" { return new Symbol(sym.OBS, yyline+1,0); }
 "Extra:"      {return new Symbol(sym.EXTRA, yyline+1,0);}
+"Intensidad:" { return new Symbol(sym.INTENSIDAD, yyline+1,0); }
 
 
 /* --- Superserie (sin distinguir mayúsculas) --- */
@@ -52,9 +57,9 @@ LETRA=[a-zA-Z]
 "="              { return new Symbol(sym.IGUAL, yyline+1, 0); }
 
 
-"Lunes"|"Martes"|"Miercoles"|"Jueves"|"Viernes"|"Sabado"|"Domingo" {return new Symbol(sym.VAL_DIA,lineyy+1,0);}
+"Lunes"|"Martes"|"Miércoles"|"Miercoles"|"Jueves"|"Viernes"|"Sábado"|"Sabado"|"Domingo" {return new Symbol(sym.VAL_DIA,yyline+1,0);}
 
-{DIGITO}+ ("kg"|"lb"|"%1RM") {return new Symbol(sym.CARGA,lineyy+1,0);}
+{DIGITO}+ ("kg"|"lb"|"%1RM") {return new Symbol(sym.CARGA,yyline+1,0);}
 {DIGITO}+ ("m"|"s"|"h") {return new Symbol(sym.TIEMPO,yyline+1,0);}
 {DIGITO}+ "km/h" {return new Symbol(sym.VELOCIDAD,yyline+1,0);}
 
@@ -71,6 +76,7 @@ LETRA=[a-zA-Z]
 
 {LETRA}+        { return new Symbol(sym.ID, yyline+1, 0, yytext()); }
 {DIGITO}+            { return new Symbol(sym.NUM, yyline+1, 0, Integer.valueOf(yytext()));}
-\"[^\"\n]*\"     { return new Symbol(sym.STRING, yyline+1, 0, yytext()); }
-[ \t\r\n]+       { /* ignorar espacios */ }
+\"[^\"\r\n]*\" { return new Symbol(sym.STRING, yyline+1, 0, yytext()); }
+[ \t\f]+         { /* ignorar espacios horizontales */ }
+\r\n|\r|\n        { return new Symbol(sym.EOL, yyline+1, yycolumn); }
 .                { System.out.println("Error léxico en línea " + (yyline+1) + ": " + yytext()); }

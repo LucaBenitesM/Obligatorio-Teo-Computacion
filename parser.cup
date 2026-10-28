@@ -1,12 +1,149 @@
 import java_cup.runtime.*;
 
-terminal PLAN;
-terminal String STRING;
+/* Los valores tipados coinciden con los que entrega scanner.jflex. */
+terminal String STRING, ID;
+terminal Integer NUM, SERIES_X, PORCENTAJE;
+terminal PLAN, NIVEL, SEMANAS, OBJETIVOS, PROFESOR, FECHA, RUTINA, DIA,
+         CALENTAMIENTO, EJERCICIOS, DURACION, MUSCULOS, VARIANTES,
+         EQUIPAMIENTO, OBS, EXTRA, INTENSIDAD, FIN_SUPERSERIE, SUPERSERIE,
+         VUELTAS, IGUAL_A, EXCEPTO, VEZ, VECES, DESCANSO, MAX, REPS,
+         X, DOS_PUNTOS, ARROBA, IGUAL, VAL_DIA, CARGA, TIEMPO, VELOCIDAD,
+         VAL_INTENSIDAD, NIVEL_VAL,
+         LCORCH, RCORCH, COMA, FECHA_VAL, EOL;
 
-non terminal plan;
+non terminal plan, eols, encabezado, nivel_opcional, objetivos_opcionales,
+              rutinas, rutina, calentamiento_opcional, contenido_rutina,
+              ejercicios, elemento_ejercicio, ejercicio, nombre_ejercicio,
+              especificacion, carga_opcional, descanso_opcional, superserie,
+              ejercicios_superserie, reutilizacion, repeticiones_opcionales,
+              excepto_opcional, lista_exclusiones, item_exclusion,
+              campos_rutina, campo_rutina, lista_ids, extra_valor;
 
 start with plan;
 
-plan ::= PLAN STRING:n
-         {: System.out.println("Plan reconocido: " + n); :}
+plan ::= encabezado rutinas
+         {: System.out.println("Plan de entrenamiento: estructura reconocida."); :}
        ;
+
+/* Encabezado: PLAN, campos generales, semanas, profesor y fecha. */
+encabezado ::= PLAN STRING EOL eols nivel_opcional objetivos_opcionales
+               SEMANAS NUM EOL eols
+               PROFESOR STRING EOL eols
+               FECHA FECHA_VAL EOL eols
+             ;
+
+nivel_opcional ::= /* vacío */
+                 | NIVEL NIVEL_VAL EOL eols
+                 ;
+
+objetivos_opcionales ::= /* vacío */
+                       | OBJETIVOS LCORCH lista_ids RCORCH EOL eols
+                       ;
+
+eols ::= /* vacío */
+       | eols EOL
+       ;
+
+rutinas ::= rutina
+          | rutinas rutina
+          ;
+
+rutina ::= RUTINA STRING EOL eols
+           DIA VAL_DIA EOL eols
+           calentamiento_opcional
+           contenido_rutina
+           campos_rutina
+         ;
+
+calentamiento_opcional ::= /* vacío */
+                          | CALENTAMIENTO STRING EOL eols
+                          ;
+
+contenido_rutina ::= EJERCICIOS EOL eols ejercicios
+                    | reutilizacion
+                    ;
+
+ejercicios ::= elemento_ejercicio
+             | ejercicios elemento_ejercicio
+             ;
+
+elemento_ejercicio ::= ejercicio EOL eols
+                     | superserie
+                     ;
+
+ejercicio ::= nombre_ejercicio DOS_PUNTOS especificacion
+            ;
+
+nombre_ejercicio ::= ID
+                   | nombre_ejercicio ID
+                   ;
+
+/* Fuerza, al fallo, isométrico, cardio y ejercicio por repeticiones. */
+especificacion ::= SERIES_X NUM carga_opcional descanso_opcional
+                 | SERIES_X MAX descanso_opcional
+                 | SERIES_X TIEMPO descanso_opcional
+                 | TIEMPO ARROBA VELOCIDAD
+                 | TIEMPO
+                 | NUM REPS carga_opcional
+                 ;
+
+carga_opcional ::= /* vacío */
+                 | ARROBA CARGA
+                 ;
+
+descanso_opcional ::= /* vacío */
+                    | COMA DESCANSO TIEMPO
+                    ;
+
+/* La producción exige al menos dos ejercicios dentro de cada superserie. */
+superserie ::= nombre_ejercicio SUPERSERIE NUM VUELTAS EOL eols
+                ejercicios_superserie
+                FIN_SUPERSERIE descanso_opcional EOL eols
+             ;
+
+ejercicios_superserie ::= ejercicio EOL eols ejercicio EOL eols
+                         | ejercicios_superserie ejercicio EOL eols
+                         ;
+
+reutilizacion ::= IGUAL_A STRING repeticiones_opcionales excepto_opcional EOL eols
+                ;
+
+repeticiones_opcionales ::= /* vacío */
+                          | X NUM VEZ
+                          | X NUM VECES
+                          | PORCENTAJE
+                          ;
+
+excepto_opcional ::= /* vacío */
+                   | EXCEPTO LCORCH lista_exclusiones RCORCH
+                   ;
+
+lista_exclusiones ::= item_exclusion
+                    | lista_exclusiones COMA item_exclusion
+                    ;
+
+item_exclusion ::= ID
+                 | item_exclusion ID
+                 ;
+
+campos_rutina ::= /* vacío */
+                | campos_rutina campo_rutina
+                ;
+
+campo_rutina ::= INTENSIDAD VAL_INTENSIDAD EOL eols
+               | DURACION TIEMPO EOL eols
+               | MUSCULOS LCORCH lista_ids RCORCH EOL eols
+               | EQUIPAMIENTO LCORCH lista_ids RCORCH EOL eols
+               | VARIANTES LCORCH lista_ids RCORCH EOL eols
+               | OBS STRING EOL eols
+               | EXTRA ID IGUAL extra_valor EOL eols
+               ;
+
+extra_valor ::= ID
+              | STRING
+              | NUM
+              ;
+
+lista_ids ::= ID
+            | lista_ids COMA ID
+            ;
