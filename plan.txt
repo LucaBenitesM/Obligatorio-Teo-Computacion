@@ -36,3 +36,20 @@ Intensidad: ALTA
 Duración: 75m
 Músculos: [Piernas, Glúteos, Core]
 Equipamiento: [Barra, Discos, Mancuernas, Bicicleta fija]
+
+RUTINA "Día C - Cardio y core"
+Día: Viernes
+EJERCICIOS:
+  cinta: 30m @ 10km/h
+  plancha: 3x45s, descanso 30s
+  abdominales: 4x20
+Intensidad: ***
+Duración: 45m
+Músculos: [Core, Piernas]
+
+RUTINA "Día A en casa"
+Día: Sábado
+Igual a "Día A - Tren superior" x 1 vez EXCEPTO [dominadas, brazos y core]
+Intensidad: BAJA
+Duración: 35m
+Obs: "Versión reducida, sin equipamiento de gimnasio."

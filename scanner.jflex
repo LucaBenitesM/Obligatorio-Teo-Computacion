@@ -1,82 +1,134 @@
 import java_cup.runtime.*;
 
 %%
+%public
 %class Lexer
 %cup
 %line
 %column
 %unicode
+%state LISTA, TEXTO_LIBRE, EXTRA_CLAVE, EXTRA_IGUAL
 
-DIGITO =[0-9]
-LETRA=[a-zA-ZáéíóúÁÉÍÓÚüÜñÑ]
+%{
+  private Diagnosticos diagnosticos = new Diagnosticos();
+  private boolean necesitaEol = false;
+
+  public void configurar(Diagnosticos errores) { diagnosticos = errores; }
+  public int lineaActual() { return yyline + 1; }
+
+  private Symbol token(int tipo) { return token(tipo, null); }
+
+  private Symbol token(int tipo, Object valor) {
+    if (tipo == sym.EOL) necesitaEol = false;
+    else if (tipo != sym.EOF) necesitaEol = true;
+    return new Symbol(tipo, yyline + 1, yycolumn + 1, valor);
+  }
+
+  private String texto(String valor) {
+    valor = valor.trim();
+    if (valor.startsWith("\"")) {
+      if (valor.length() >= 2 && valor.endsWith("\"")) return valor.substring(1, valor.length() - 1);
+      diagnosticos.agregar("léxico", yyline + 1, "Texto entre comillas sin cierre.");
+    }
+    return valor;
+  }
+
+  private Symbol invalido(String mensaje) {
+    diagnosticos.agregar("léxico", yyline + 1, mensaje);
+    return token(sym.INVALIDO);
+  }
+%}
+
+%eofval{
+  // Una última línea sin salto también puede terminar una declaración.
+  if (necesitaEol) return token(sym.EOL);
+  return token(sym.EOF);
+%eofval}
+
+DIGITO = [0-9]
+ESPACIO = [ \t\f]
+SALTO = \r\n|\r|\n
+SUPER = [sS][uU][pP][eE][rR][sS][eE][rR][iI][eE]
+FIN = [fF][iI][nN]
+NOMBRE_LIBRE = [^ \t\f\r\n:\"][^\r\n:\"]*
 
 %%
 
-"PLAN"           { return new Symbol(sym.PLAN, yyline+1, 0); }
-"Nivel:"         { return new Symbol(sym.NIVEL, yyline+1, 0); }
-"Semanas:"         { return new Symbol(sym.SEMANAS, yyline+1, 0);}
-"Objetivos:"     { return new Symbol(sym.OBJETIVOS, yyline+1,0);}
-"Profesor:"          { return new Symbol(sym.PROFESOR, yyline+1,0);}
-"Fecha:"            { return new Symbol(sym.FECHA, yyline+1,0);}
-"RUTINA"        { return new Symbol(sym.RUTINA, yyline+1,0);}
-"Día:"|"Dia:"  { return new Symbol(sym.DIA, yyline+1,0);}
-"Calentamiento:"        { return new Symbol(sym.CALENTAMIENTO, yyline+1,0);}
-"EJERCICIOS:"        { return new Symbol(sym.EJERCICIOS, yyline+1,0);}
-"Duración:"|"Duracion:" { return new Symbol(sym.DURACION, yyline+1,0);}
-"Músculos:"|"Musculos:" { return new Symbol(sym.MUSCULOS, yyline+1,0);}
-"Variantes:"        { return new Symbol(sym.VARIANTES, yyline+1,0);}
-"Equipamiento:"      {return new Symbol(sym.EQUIPAMIENTO, yyline+1,0);}
-"Obs:"      {return new Symbol(sym.OBS, yyline+1,0);}
-"Observaciones:" { return new Symbol(sym.OBS, yyline+1,0); }
-"Extra:"      {return new Symbol(sym.EXTRA, yyline+1,0);}
-"Intensidad:" { return new Symbol(sym.INTENSIDAD, yyline+1,0); }
+<YYINITIAL> {
+  "PLAN"            { return token(sym.PLAN); }
+  "Nivel:"          { return token(sym.NIVEL); }
+  "Semanas:"        { return token(sym.SEMANAS); }
+  "Objetivos:"      { return token(sym.OBJETIVOS); }
+  "Profesor:"       { return token(sym.PROFESOR); }
+  "Fecha:"          { return token(sym.FECHA); }
+  "RUTINA"          { return token(sym.RUTINA); }
+  "Día:"|"Dia:"     { return token(sym.DIA); }
+  "Calentamiento:"  { yybegin(TEXTO_LIBRE); return token(sym.CALENTAMIENTO); }
+  "EJERCICIOS:"     { return token(sym.EJERCICIOS); }
+  "Duración:"|"Duracion:" { return token(sym.DURACION); }
+  "Músculos:"|"Musculos:" { return token(sym.MUSCULOS); }
+  "Variantes:"      { return token(sym.VARIANTES); }
+  "Equipamiento:"   { return token(sym.EQUIPAMIENTO); }
+  "Obs:"|"Observaciones:" { yybegin(TEXTO_LIBRE); return token(sym.OBS); }
+  "Extra:"          { yybegin(EXTRA_CLAVE); return token(sym.EXTRA); }
+  "Intensidad:"     { return token(sym.INTENSIDAD); }
 
+  {FIN}[ \t]+{SUPER} { return token(sym.FIN_SUPERSERIE); }
+  {SUPER}           { return token(sym.SUPERSERIE); }
+  "vueltas"         { return token(sym.VUELTAS); }
+  "Igual"[ \t]+"a" { return token(sym.IGUAL_A); }
+  "EXCEPTO"         { return token(sym.EXCEPTO); }
+  "vez"            { return token(sym.VEZ); }
+  "veces"          { return token(sym.VECES); }
+  {DIGITO}+"%"     { return token(sym.PORCENTAJE, yytext().substring(0, yylength()-1)); }
+  "descanso"       { return token(sym.DESCANSO); }
+  "MAX"            { return token(sym.MAX); }
+  "reps"           { return token(sym.REPS); }
+  {DIGITO}+[ \t]*"x" { return token(sym.SERIES_X, yytext().substring(0, yylength()-1).trim()); }
+  "x"              { return token(sym.X); }
+  ":"              { return token(sym.DOS_PUNTOS); }
+  "@"              { return token(sym.ARROBA); }
+  ","              { return token(sym.COMA); }
+  "["              { yybegin(LISTA); return token(sym.LCORCH); }
 
-/* --- Superserie (sin distinguir mayúsculas) --- */
-[fF][iI][nN][ \t]+[sS][uU][pP][eE][rR][sS][eE][rR][iI][eE]   { return new Symbol(sym.FIN_SUPERSERIE, yyline+1, 0); }
-[sS][uU][pP][eE][rR][sS][eE][rR][iI][eE]                     { return new Symbol(sym.SUPERSERIE, yyline+1, 0); }
-"vueltas"        { return new Symbol(sym.VUELTAS, yyline+1, 0); }
+  "Lunes"|"Martes"|"Miércoles"|"Miercoles"|"Jueves"|"Viernes"|"Sábado"|"Sabado"|"Domingo"
+                   { return token(sym.VAL_DIA, yytext()); }
+  {DIGITO}+("kg"|"lb"|"%1RM") { return token(sym.CARGA, yytext()); }
+  {DIGITO}+("h"|"m"|"s") { return token(sym.TIEMPO, yytext()); }
+  {DIGITO}+"km/h"  { return token(sym.VELOCIDAD, yytext()); }
+  "ALTA"|"MEDIA"|"BAJA"|[*]{1,5}|[1-5]"/5" { return token(sym.VAL_INTENSIDAD, yytext()); }
+  "BASICO"|"INTERMEDIO"|"AVANZADO" { return token(sym.NIVEL_VAL, yytext()); }
+  {DIGITO}{1,2}"/"{DIGITO}{1,2}"/"{DIGITO}{4} { return token(sym.FECHA_VAL, yytext()); }
+  {DIGITO}+        { return token(sym.NUM, yytext()); }
+  \"[^\"\r\n]*\" { return token(sym.STRING, texto(yytext())); }
 
-/* --- Igual a --- */
-"Igual"[ \t]+"a" { return new Symbol(sym.IGUAL_A, yyline+1, 0); }
-"EXCEPTO"        { return new Symbol(sym.EXCEPTO, yyline+1, 0); }
-"vez"            { return new Symbol(sym.VEZ, yyline+1, 0); }
-"veces"          { return new Symbol(sym.VECES, yyline+1, 0); }
-{DIGITO}+"%"     { return new Symbol(sym.PORCENTAJE, yyline+1, 0, Integer.valueOf(yytext().substring(0, yylength()-1))); }
+  // El contexto derecho permite texto libre hasta ':' o SUPERSERIE.
+  // Las reglas de campos reservados anteriores tienen prioridad en los empates.
+  {NOMBRE_LIBRE} / ":" { return token(sym.NOMBRE, yytext().trim()); }
+  {NOMBRE_LIBRE} / [ \t]+{SUPER} { return token(sym.NOMBRE, yytext().trim()); }
+  \"[^\"\r\n]*  { return invalido("Cadena entre comillas sin cierre."); }
+}
 
-/* --- Ejercicios --- */
-"descanso"       { return new Symbol(sym.DESCANSO, yyline+1, 0); }
-"MAX"            { return new Symbol(sym.MAX, yyline+1, 0); }
-"reps"           { return new Symbol(sym.REPS, yyline+1, 0); }
-{DIGITO}+"x"     { return new Symbol(sym.SERIES_X, yyline+1, 0, Integer.valueOf(yytext().substring(0, yylength()-1))); }
-"x"              { return new Symbol(sym.X, yyline+1, 0); }
+<LISTA> {
+  "]"              { yybegin(YYINITIAL); return token(sym.RCORCH); }
+  ","              { return token(sym.COMA); }
+  [^ \t\f\r\n,\[\]\"][^\r\n,\[\]\"]* { return token(sym.NOMBRE, yytext().trim()); }
+}
 
-/* --- Símbolos sueltos --- */
-":"              { return new Symbol(sym.DOS_PUNTOS, yyline+1, 0); }
-"@"              { return new Symbol(sym.ARROBA, yyline+1, 0); }
-"="              { return new Symbol(sym.IGUAL, yyline+1, 0); }
+<TEXTO_LIBRE> {
+  [^ \t\f\r\n][^\r\n]* { yybegin(YYINITIAL); return token(sym.TEXTO, texto(yytext())); }
+}
 
+<EXTRA_CLAVE> {
+  [^ \t\f\r\n=][^\r\n=]* { yybegin(EXTRA_IGUAL); return token(sym.CLAVE, yytext().trim()); }
+}
 
-"Lunes"|"Martes"|"Miércoles"|"Miercoles"|"Jueves"|"Viernes"|"Sábado"|"Sabado"|"Domingo" {return new Symbol(sym.VAL_DIA,yyline+1,0);}
+<EXTRA_IGUAL> {
+  "=" { yybegin(TEXTO_LIBRE); return token(sym.IGUAL); }
+}
 
-{DIGITO}+ ("kg"|"lb"|"%1RM") {return new Symbol(sym.CARGA,yyline+1,0);}
-{DIGITO}+ ("m"|"s"|"h") {return new Symbol(sym.TIEMPO,yyline+1,0);}
-{DIGITO}+ "km/h" {return new Symbol(sym.VELOCIDAD,yyline+1,0);}
-
-
-"ALTA"|"MEDIA"|"BAJA"|[*]{1,5}|[1-5]"/5"  { return new Symbol(sym.VAL_INTENSIDAD, yyline+1,0, yytext());}
-
-"BASICO"|"INTERMEDIO"|"AVANZADO"          { return new Symbol(sym.NIVEL_VAL, yyline+1, 0, yytext()); }
-
-"["    { return new Symbol(sym.LCORCH, yyline+1, 0); }
-"]"    { return new Symbol(sym.RCORCH, yyline+1, 0); }
-","    { return new Symbol(sym.COMA, yyline+1, 0); }
-
-{DIGITO}{1,2}"/"{DIGITO}{1,2}"/"{DIGITO}{4}   { return new Symbol(sym.FECHA_VAL, yyline+1, 0, yytext()); }
-
-{LETRA}+        { return new Symbol(sym.ID, yyline+1, 0, yytext()); }
-{DIGITO}+            { return new Symbol(sym.NUM, yyline+1, 0, Integer.valueOf(yytext()));}
-\"[^\"\r\n]*\" { return new Symbol(sym.STRING, yyline+1, 0, yytext()); }
-[ \t\f]+         { /* ignorar espacios horizontales */ }
-\r\n|\r|\n        { return new Symbol(sym.EOL, yyline+1, yycolumn); }
-.                { System.out.println("Error léxico en línea " + (yyline+1) + ": " + yytext()); }
+<YYINITIAL,LISTA,TEXTO_LIBRE,EXTRA_CLAVE,EXTRA_IGUAL> {
+  {ESPACIO}+ { /* La indentación no modifica la estructura. */ }
+  {SALTO}    { yybegin(YYINITIAL); return token(sym.EOL); }
+  .          { return invalido("Carácter no válido: '" + yytext() + "'."); }
+}

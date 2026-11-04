@@ -1,0 +1,38 @@
+PLAN "Ejemplo con errores recuperables"
+Nivel: BASICO
+Objetivos: [Salud]
+Semanas: 8
+Profesor: "Docente"
+Fecha: 20/08/2026
+
+RUTINA "Error léxico"
+Día: Lunes
+EJERCICIOS:
+  press banca: 3x8 @ ?60kg
+Intensidad: MEDIA
+Duración: 30m
+Músculos: [Pecho]
+
+RUTINA "Error sintáctico"
+Día: Martes
+EJERCICIOS:
+  press banca: 3x
+Intensidad: MEDIA
+Duración: 30m
+Músculos: [Pecho]
+
+RUTINA "Error semántico"
+Día: Miércoles
+EJERCICIOS:
+  press banca: 0x8 @ 101%1RM
+Intensidad: MEDIA
+Duración: 30m
+Músculos: [Pecho]
+
+RUTINA "Rutina correcta posterior"
+Día: Viernes
+EJERCICIOS:
+  bicicleta: 15m @ 22km/h
+Intensidad: BAJA
+Duración: 15m
+Músculos: [Piernas]

@@ -1,149 +1,214 @@
 import java_cup.runtime.*;
+import java.math.BigInteger;
 
-/* Los valores tipados coinciden con los que entrega scanner.jflex. */
-terminal String STRING, ID;
-terminal Integer NUM, SERIES_X, PORCENTAJE;
+parser code {:
+  public Diagnosticos diagnosticos = new Diagnosticos();
+  public Validador validador = new Validador(diagnosticos);
+  public PlanEntrenamiento plan;
+
+  public void configurar(Diagnosticos errores) {
+    diagnosticos = errores;
+    validador = new Validador(errores);
+  }
+
+  @Override public void syntax_error(Symbol actual) {
+    String token = actual.sym == sym.EOF ? "fin del archivo" : sym.terminalNames[actual.sym];
+    diagnosticos.agregar("sintáctico", actual.left, "Se encontró " + token + " en una posición no válida.");
+  }
+
+  @Override public void unrecovered_syntax_error(Symbol actual) throws Exception {
+    throw new Exception("No se pudo recuperar la estructura del archivo.");
+  }
+:};
+
+terminal String STRING, NOMBRE, NUM, SERIES_X, PORCENTAJE, CARGA, TIEMPO,
+                VELOCIDAD, VAL_DIA, VAL_INTENSIDAD, NIVEL_VAL, FECHA_VAL, TEXTO, CLAVE;
 terminal PLAN, NIVEL, SEMANAS, OBJETIVOS, PROFESOR, FECHA, RUTINA, DIA,
-         CALENTAMIENTO, EJERCICIOS, DURACION, MUSCULOS, VARIANTES,
-         EQUIPAMIENTO, OBS, EXTRA, INTENSIDAD, FIN_SUPERSERIE, SUPERSERIE,
-         VUELTAS, IGUAL_A, EXCEPTO, VEZ, VECES, DESCANSO, MAX, REPS,
-         X, DOS_PUNTOS, ARROBA, IGUAL, VAL_DIA, CARGA, TIEMPO, VELOCIDAD,
-         VAL_INTENSIDAD, NIVEL_VAL,
-         LCORCH, RCORCH, COMA, FECHA_VAL, EOL;
+         CALENTAMIENTO, EJERCICIOS, DURACION, MUSCULOS, VARIANTES, EQUIPAMIENTO,
+         OBS, EXTRA, INTENSIDAD, FIN_SUPERSERIE, SUPERSERIE, VUELTAS,
+         IGUAL_A, EXCEPTO, VEZ, VECES, DESCANSO, MAX, REPS, X,
+         DOS_PUNTOS, ARROBA, IGUAL, LCORCH, RCORCH, COMA, EOL, INVALIDO;
 
-non terminal plan, eols, encabezado, nivel_opcional, objetivos_opcionales,
-              rutinas, rutina, calentamiento_opcional, contenido_rutina,
-              ejercicios, elemento_ejercicio, ejercicio, nombre_ejercicio,
-              especificacion, carga_opcional, descanso_opcional, superserie,
-              ejercicios_superserie, reutilizacion, repeticiones_opcionales,
-              excepto_opcional, lista_exclusiones, item_exclusion,
-              campos_rutina, campo_rutina, lista_ids, extra_valor;
+non terminal PlanEntrenamiento plan, encabezado;
+non terminal PlanEntrenamiento.Rutinas rutinas;
+non terminal PlanEntrenamiento.Rutina rutina;
+non terminal PlanEntrenamiento.Contenido contenido;
+non terminal PlanEntrenamiento.Elementos ejercicios, ejercicios_superserie;
+non terminal PlanEntrenamiento.Elemento elemento, ejercicio, superserie;
+non terminal PlanEntrenamiento.Especificacion especificacion;
+non terminal PlanEntrenamiento.Medida carga_opcional, descanso_opcional;
+non terminal PlanEntrenamiento.Campos campos, campo;
+non terminal PlanEntrenamiento.Nombres lista_nombres, excepto_opcional;
+non terminal PlanEntrenamiento.Reutilizacion reutilizacion;
+non terminal BigInteger repeticiones_opcionales;
+non terminal String calentamiento_opcional, nombre_opcional;
+non terminal eols;
 
 start with plan;
 
-plan ::= encabezado rutinas
-         {: System.out.println("Plan de entrenamiento: estructura reconocida."); :}
-       ;
+plan ::= eols encabezado:p rutinas:r
+  {: p.rutinas.addAll(r); parser.validador.completar(p); parser.plan = p; RESULT = p; :}
+;
 
-/* Encabezado: PLAN, campos generales, semanas, profesor y fecha. */
-encabezado ::= PLAN STRING EOL eols nivel_opcional objetivos_opcionales
-               SEMANAS NUM EOL eols
-               PROFESOR STRING EOL eols
-               FECHA FECHA_VAL EOL eols
-             ;
+encabezado ::= PLAN STRING:n EOL eols
+               NIVEL NIVEL_VAL:v EOL eols
+               OBJETIVOS LCORCH lista_nombres:o RCORCH EOL eols
+               SEMANAS NUM:s EOL eols
+               PROFESOR STRING:p EOL eols
+               FECHA FECHA_VAL:f EOL eols
+  {:
+    PlanEntrenamiento resultado = new PlanEntrenamiento();
+    resultado.nombre = n; resultado.nivel = v; resultado.objetivos = o;
+    resultado.semanas = parser.validador.semanas(s, sleft);
+    resultado.profesor = p; resultado.fechaTexto = f;
+    resultado.fecha = parser.validador.fecha(f, fleft);
+    RESULT = resultado;
+  :}
+;
 
-nivel_opcional ::= /* vacío */
-                 | NIVEL NIVEL_VAL EOL eols
-                 ;
+eols ::= /* vacío */ | eols EOL;
 
-objetivos_opcionales ::= /* vacío */
-                       | OBJETIVOS LCORCH lista_ids RCORCH EOL eols
-                       ;
+rutinas ::= rutina:r
+  {: RESULT = new PlanEntrenamiento.Rutinas(); if (r != null) RESULT.add(r); :}
+  | rutinas:rs rutina:r
+  {: if (r != null) rs.add(r); RESULT = rs; :}
+;
 
-eols ::= /* vacío */
-       | eols EOL
-       ;
+rutina ::= RUTINA STRING:n EOL eols DIA VAL_DIA:d EOL eols
+           calentamiento_opcional:c contenido:co campos:ca
+  {:
+    PlanEntrenamiento.Rutina resultado = new PlanEntrenamiento.Rutina();
+    resultado.nombre = n; resultado.linea = nleft; resultado.dia = d;
+    resultado.contenido = co; resultado.declarados = new PlanEntrenamiento.Campos();
+    resultado.declarados.calentamiento = c; resultado.declarados.aplicar(ca);
+    parser.validador.nombre(n, nleft); RESULT = resultado;
+  :}
+  /* Se descarta la rutina mal formada y se sincroniza en RUTINA o EOF. */
+  | RUTINA error {: RESULT = null; :}
+  | INVALIDO error {: RESULT = null; :}
+;
 
-rutinas ::= rutina
-          | rutinas rutina
-          ;
+calentamiento_opcional ::= /* vacío */ {: RESULT = null; :}
+  | CALENTAMIENTO TEXTO:t EOL eols {: RESULT = t; :}
+;
 
-rutina ::= RUTINA STRING EOL eols
-           DIA VAL_DIA EOL eols
-           calentamiento_opcional
-           contenido_rutina
-           campos_rutina
-         ;
+contenido ::= EJERCICIOS EOL eols ejercicios:e
+  {: RESULT = new PlanEntrenamiento.Contenido(); RESULT.ejercicios = e; :}
+  | reutilizacion:r
+  {: RESULT = new PlanEntrenamiento.Contenido(); RESULT.reutilizacion = r; :}
+;
 
-calentamiento_opcional ::= /* vacío */
-                          | CALENTAMIENTO STRING EOL eols
-                          ;
+ejercicios ::= elemento:e
+  {: RESULT = new PlanEntrenamiento.Elementos(); RESULT.add(e); :}
+  | ejercicios:es elemento:e {: es.add(e); RESULT = es; :}
+;
 
-contenido_rutina ::= EJERCICIOS EOL eols ejercicios
-                    | reutilizacion
-                    ;
+elemento ::= ejercicio:e EOL eols {: RESULT = e; :}
+  | superserie:s {: RESULT = s; :}
+;
 
-ejercicios ::= elemento_ejercicio
-             | ejercicios elemento_ejercicio
-             ;
+ejercicio ::= NOMBRE:n DOS_PUNTOS especificacion:e
+  {: parser.validador.nombre(n, nleft); RESULT = new PlanEntrenamiento.Elemento(n, nleft, e); :}
+;
 
-elemento_ejercicio ::= ejercicio EOL eols
-                     | superserie
-                     ;
+especificacion ::= SERIES_X:s NUM:r carga_opcional:c descanso_opcional:d
+  {:
+    RESULT = new PlanEntrenamiento.Especificacion("FUERZA");
+    RESULT.series = parser.validador.positivo(s, sleft, "La cantidad de series");
+    RESULT.repeticiones = parser.validador.positivo(r, rleft, "La cantidad de repeticiones");
+    RESULT.carga = c; RESULT.descanso = d;
+  :}
+  | SERIES_X:s MAX descanso_opcional:d
+  {:
+    RESULT = new PlanEntrenamiento.Especificacion("FALLO");
+    RESULT.series = parser.validador.positivo(s, sleft, "La cantidad de series"); RESULT.descanso = d;
+  :}
+  | SERIES_X:s TIEMPO:t descanso_opcional:d
+  {:
+    RESULT = new PlanEntrenamiento.Especificacion("ISOMETRICO");
+    RESULT.series = parser.validador.positivo(s, sleft, "La cantidad de series");
+    RESULT.tiempo = new PlanEntrenamiento.Medida(t, tleft); RESULT.descanso = d;
+  :}
+  | TIEMPO:t ARROBA VELOCIDAD:v
+  {:
+    RESULT = new PlanEntrenamiento.Especificacion("CARDIO");
+    RESULT.tiempo = new PlanEntrenamiento.Medida(t, tleft);
+    RESULT.velocidad = new PlanEntrenamiento.Medida(v, vleft);
+  :}
+  | TIEMPO:t
+  {: RESULT = new PlanEntrenamiento.Especificacion("CARDIO"); RESULT.tiempo = new PlanEntrenamiento.Medida(t, tleft); :}
+  | NUM:r REPS carga_opcional:c
+  {:
+    RESULT = new PlanEntrenamiento.Especificacion("REPETICIONES");
+    RESULT.repeticiones = parser.validador.positivo(r, rleft, "La cantidad de repeticiones"); RESULT.carga = c;
+  :}
+;
 
-ejercicio ::= nombre_ejercicio DOS_PUNTOS especificacion
-            ;
+carga_opcional ::= /* vacío */ {: RESULT = null; :}
+  | ARROBA CARGA:c {: RESULT = parser.validador.carga(c, cleft); :}
+;
 
-nombre_ejercicio ::= ID
-                   | nombre_ejercicio ID
-                   ;
+descanso_opcional ::= /* vacío */ {: RESULT = null; :}
+  | COMA DESCANSO TIEMPO:t {: RESULT = new PlanEntrenamiento.Medida(t, tleft); :}
+;
 
-/* Fuerza, al fallo, isométrico, cardio y ejercicio por repeticiones. */
-especificacion ::= SERIES_X NUM carga_opcional descanso_opcional
-                 | SERIES_X MAX descanso_opcional
-                 | SERIES_X TIEMPO descanso_opcional
-                 | TIEMPO ARROBA VELOCIDAD
-                 | TIEMPO
-                 | NUM REPS carga_opcional
-                 ;
+nombre_opcional ::= /* vacío */ {: RESULT = null; :}
+  | NOMBRE:n {: parser.validador.nombre(n, nleft); RESULT = n; :}
+;
 
-carga_opcional ::= /* vacío */
-                 | ARROBA CARGA
-                 ;
+superserie ::= nombre_opcional:n SUPERSERIE:s NUM:v VUELTAS EOL eols
+               ejercicios_superserie:e FIN_SUPERSERIE descanso_opcional:d EOL eols
+  {:
+    RESULT = new PlanEntrenamiento.Elemento(n, sleft, null);
+    RESULT.vueltas = parser.validador.vueltas(v, vleft); RESULT.ejercicios = e; RESULT.descanso = d;
+  :}
+;
 
-descanso_opcional ::= /* vacío */
-                    | COMA DESCANSO TIEMPO
-                    ;
+ejercicios_superserie ::= ejercicio:a EOL eols ejercicio:b EOL eols
+  {: RESULT = new PlanEntrenamiento.Elementos(); RESULT.add(a); RESULT.add(b); :}
+  | ejercicios_superserie:es ejercicio:e EOL eols {: es.add(e); RESULT = es; :}
+;
 
-/* La producción exige al menos dos ejercicios dentro de cada superserie. */
-superserie ::= nombre_ejercicio SUPERSERIE NUM VUELTAS EOL eols
-                ejercicios_superserie
-                FIN_SUPERSERIE descanso_opcional EOL eols
-             ;
+reutilizacion ::= IGUAL_A STRING:n repeticiones_opcionales:r excepto_opcional:e EOL eols
+  {:
+    RESULT = new PlanEntrenamiento.Reutilizacion(); RESULT.nombre = n;
+    RESULT.linea = nleft; RESULT.vueltas = r; RESULT.exclusiones = e;
+  :}
+;
 
-ejercicios_superserie ::= ejercicio EOL eols ejercicio EOL eols
-                         | ejercicios_superserie ejercicio EOL eols
-                         ;
+repeticiones_opcionales ::= /* vacío */ {: RESULT = BigInteger.ONE; :}
+  | X NUM:n VEZ {: RESULT = parser.validador.repeticion(n, true, nleft); :}
+  | X NUM:n VECES {: RESULT = parser.validador.repeticion(n, false, nleft); :}
+  | PORCENTAJE:n {: RESULT = parser.validador.porcentaje(n, nleft); :}
+;
 
-reutilizacion ::= IGUAL_A STRING repeticiones_opcionales excepto_opcional EOL eols
-                ;
+excepto_opcional ::= /* vacío */ {: RESULT = new PlanEntrenamiento.Nombres(); :}
+  | EXCEPTO LCORCH lista_nombres:ns RCORCH {: RESULT = ns; :}
+;
 
-repeticiones_opcionales ::= /* vacío */
-                          | X NUM VEZ
-                          | X NUM VECES
-                          | PORCENTAJE
-                          ;
+campos ::= /* vacío */ {: RESULT = new PlanEntrenamiento.Campos(); :}
+  | campos:cs campo:c {: cs.aplicar(c); RESULT = cs; :}
+;
 
-excepto_opcional ::= /* vacío */
-                   | EXCEPTO LCORCH lista_exclusiones RCORCH
-                   ;
+campo ::= INTENSIDAD VAL_INTENSIDAD:i EOL eols
+  {: RESULT = new PlanEntrenamiento.Campos(); RESULT.intensidad = i; :}
+  | DURACION TIEMPO:t EOL eols
+  {: RESULT = new PlanEntrenamiento.Campos(); RESULT.duracion = new PlanEntrenamiento.Medida(t, tleft); :}
+  | MUSCULOS LCORCH lista_nombres:ns RCORCH EOL eols
+  {: RESULT = new PlanEntrenamiento.Campos(); RESULT.musculos = ns; :}
+  | EQUIPAMIENTO LCORCH lista_nombres:ns RCORCH EOL eols
+  {: RESULT = new PlanEntrenamiento.Campos(); RESULT.equipamiento = ns; :}
+  | VARIANTES LCORCH lista_nombres:ns RCORCH EOL eols
+  {: RESULT = new PlanEntrenamiento.Campos(); RESULT.variantes = ns; :}
+  | OBS TEXTO:t EOL eols
+  {: RESULT = new PlanEntrenamiento.Campos(); RESULT.observaciones = t; :}
+  | CALENTAMIENTO TEXTO:t EOL eols
+  {: RESULT = new PlanEntrenamiento.Campos(); RESULT.calentamiento = t; :}
+  | EXTRA CLAVE:c IGUAL TEXTO:t EOL eols
+  {: RESULT = new PlanEntrenamiento.Campos(); RESULT.extra.put(c, t); :}
+;
 
-lista_exclusiones ::= item_exclusion
-                    | lista_exclusiones COMA item_exclusion
-                    ;
-
-item_exclusion ::= ID
-                 | item_exclusion ID
-                 ;
-
-campos_rutina ::= /* vacío */
-                | campos_rutina campo_rutina
-                ;
-
-campo_rutina ::= INTENSIDAD VAL_INTENSIDAD EOL eols
-               | DURACION TIEMPO EOL eols
-               | MUSCULOS LCORCH lista_ids RCORCH EOL eols
-               | EQUIPAMIENTO LCORCH lista_ids RCORCH EOL eols
-               | VARIANTES LCORCH lista_ids RCORCH EOL eols
-               | OBS STRING EOL eols
-               | EXTRA ID IGUAL extra_valor EOL eols
-               ;
-
-extra_valor ::= ID
-              | STRING
-              | NUM
-              ;
-
-lista_ids ::= ID
-            | lista_ids COMA ID
-            ;
+lista_nombres ::= NOMBRE:n
+  {: RESULT = new PlanEntrenamiento.Nombres(); RESULT.add(n); :}
+  | lista_nombres:ns COMA NOMBRE:n {: ns.add(n); RESULT = ns; :}
+;
