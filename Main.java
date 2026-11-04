@@ -1,14 +1,17 @@
-import java.io.*;
-   
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+
 public class Main {
-  static public void main(String argv[]) {    
-    /* Start the parser */
-    try {
-      parser p = new parser(new Lexer(new FileReader(argv[0])));
-      Object result = p.parse().value;      
+  public static void main(String[] args) {
+    String archivo = args.length > 0 ? args[0] : "plan.txt";
+    try (Reader entrada = Files.newBufferedReader(Paths.get(archivo), StandardCharsets.UTF_8)) {
+      parser p = new parser(new Lexer(entrada));
+      p.parse();
     } catch (Exception e) {
-      /* do cleanup here -- possibly rethrow e */
-      e.printStackTrace();
+      System.err.println("No se pudo analizar '" + archivo + "': " + e.getMessage());
+      System.exit(1);
     }
   }
 }

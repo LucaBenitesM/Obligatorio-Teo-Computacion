@@ -1,1 +1,38 @@
 PLAN "Fuerza Inicial 2027"
+Nivel: INTERMEDIO
+Objetivos: [Fuerza, Hipertrofia]
+Semanas: 8
+Profesor: "Juan Rappi Dito"
+Fecha: 20/08/2026
+
+RUTINA "Día A - Tren superior"
+Día: Lunes
+Calentamiento: "5 min de remo suave + movilidad de hombros"
+EJERCICIOS:
+  press banca: 4x8 @ 60kg, descanso 2m
+  remo con barra: 4x10 @ 50kg, descanso 90s
+  dominadas: 3xMAX, descanso 2m
+  press militar: 3x10 @ 30kg, descanso 90s
+  brazos y core SUPERSERIE 3 vueltas
+    curl bíceps: 12 reps @ 15kg
+    fondos en banco: 15 reps
+    plancha: 30s
+  FIN SUPERSERIE, descanso 90s
+Intensidad: 4/5
+Duración: 60m
+Músculos: [Pecho, Espalda, Hombros, Brazos, Core]
+Equipamiento: [Barra, Mancuernas, Banco]
+Obs: "Progresar la carga de press banca semana a semana."
+
+RUTINA "Día B - Tren inferior"
+Día: Miércoles
+EJERCICIOS:
+  sentadilla: 5x5 @ 80kg, descanso 3m
+  peso muerto rumano: 4x8 @ 135lb, descanso 2m
+  estocadas: 3x12 @ 12kg
+  plancha lateral: 3x30s, descanso 30s
+  bicicleta: 15m @ 22km/h
+Intensidad: ALTA
+Duración: 75m
+Músculos: [Piernas, Glúteos, Core]
+Equipamiento: [Barra, Discos, Mancuernas, Bicicleta fija]
