@@ -46,6 +46,7 @@ import java_cup.runtime.*;
 %eofval}
 
 DIGITO = [0-9]
+LETRA = [a-zA-ZáéíóúÁÉÍÓÚñÑüÜ]
 ESPACIO = [ \t\f]
 SALTO = \r\n|\r|\n
 SUPER = [sS][uU][pP][eE][rR][sS][eE][rR][iI][eE]
@@ -98,7 +99,11 @@ NOMBRE_LIBRE = [^ \t\f\r\n:\"][^\r\n:\"]*
   {DIGITO}+"km/h"  { return token(sym.VELOCIDAD, yytext()); }
   "ALTA"|"MEDIA"|"BAJA"|[*]{1,5}|[1-5]"/5" { return token(sym.VAL_INTENSIDAD, yytext()); }
   "BASICO"|"INTERMEDIO"|"AVANZADO" { return token(sym.NIVEL_VAL, yytext()); }
-  {DIGITO}{1,2}"/"{DIGITO}{1,2}"/"{DIGITO}{4} { return token(sym.FECHA_VAL, yytext()); }
+  {DIGITO}{1,2}"-"{DIGITO}{1,2}"-"{DIGITO}{4}     { return token(sym.FECHA_VAL, yytext()); }
+  {DIGITO}{1,2}"."{DIGITO}{1,2}"."{DIGITO}{4}     { return token(sym.FECHA_VAL, yytext()); }
+  {DIGITO}{1,2}[/\-]{LETRA}{3,12}[/\-]{DIGITO}{4} { return token(sym.FECHA_VAL, yytext()); }
+  {DIGITO}{1,2}[ \t]+"de"[ \t]+{LETRA}{3,12}[ \t]+"de"[ \t]+{DIGITO}{4}
+                                                    { return token(sym.FECHA_VAL, yytext()); }
   {DIGITO}+        { return token(sym.NUM, yytext()); }
   \"[^\"\r\n]*\" { return token(sym.STRING, texto(yytext())); }
 

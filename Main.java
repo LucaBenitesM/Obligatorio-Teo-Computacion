@@ -48,6 +48,7 @@ public class Main {
         System.exit(1);
       }
       System.out.println("Plan de entrenamiento: estructura reconocida.");
+      Analisis.imprimirReportes(resultado.plan, System.out);   // <-- línea nueva
     } catch (Exception e) {
       System.err.println("No se pudo analizar '" + archivo + "': " + e.getMessage());
       System.exit(1);

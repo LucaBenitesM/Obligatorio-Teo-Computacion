@@ -37,15 +37,13 @@ public class Validador {
   }
 
   public LocalDate fecha(String texto, int linea) {
-    String[] partes = texto.split("/");
     try {
-      int anio = Integer.parseInt(partes[2]);
-      if (anio == 0) throw new DateTimeException("Año cero");
-      return LocalDate.of(anio, Integer.parseInt(partes[1]), Integer.parseInt(partes[0]));
-    } catch (DateTimeException e) {
-      error(linea, "Fecha inexistente: " + texto + ". Use día/mes/año con un año de cuatro cifras.");
+      return Fechas.parsear(texto);
+    } catch (IllegalArgumentException e) {
+      error(linea, e.getMessage());
       return null;
     }
+  }
   }
 
   public PlanEntrenamiento.Medida carga(String texto, int linea) {
