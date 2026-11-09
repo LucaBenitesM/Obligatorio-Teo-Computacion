@@ -22,6 +22,7 @@ public class PlanEntrenamiento {
   public static class Medida {
     public final BigInteger cantidad;
     public final String unidad;
+    public final String valor;
     public final int linea;
 
     public Medida(String texto, int linea) {
@@ -29,6 +30,7 @@ public class PlanEntrenamiento {
       if (!m.matches()) throw new IllegalArgumentException("Medida inválida: " + texto);
       cantidad = new BigInteger(m.group(1));
       unidad = m.group(2);
+      valor = texto;
       this.linea = linea;
     }
   }

@@ -38,7 +38,7 @@ public final class Analisis {
   // ===================== ADAPTADORES (único punto que depende de nombres de campos no vistos) =====================
 
   /** Texto original de una Medida, por ejemplo "60m". ADAPTAR al nombre real del campo en PlanEntrenamiento.Medida. */
-  private static String textoMedida(PlanEntrenamiento.Medida m) { return m == null ? null : m.texto; }
+  private static String textoMedida(PlanEntrenamiento.Medida m) { return m == null ? null : m.valor; }
 
   /** Convierte int / Integer / BigInteger a int (null -> 1). */
   private static int entero(Object o) { return o == null ? 1 : ((Number) o).intValue(); }

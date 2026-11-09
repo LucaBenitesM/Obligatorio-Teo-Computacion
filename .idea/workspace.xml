@@ -4,15 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f3ca8c99-6487-461e-aaf2-a2a39186c7b7" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Analisis.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Fechas.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main.java" afterDir="false" />
+    <list default="true" id="f3ca8c99-6487-461e-aaf2-a2a39186c7b7" name="Changes" comment="agregue 5 requerimientos adicionales">
+      <change beforePath="$PROJECT_DIR$/Analisis.java" beforeDir="false" afterPath="$PROJECT_DIR$/Analisis.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PlanEntrenamiento.java" beforeDir="false" afterPath="$PROJECT_DIR$/PlanEntrenamiento.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Validador.java" beforeDir="false" afterPath="$PROJECT_DIR$/Validador.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/parser.cup" beforeDir="false" afterPath="$PROJECT_DIR$/parser.cup" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/plan.txt" beforeDir="false" afterPath="$PROJECT_DIR$/plan.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scanner.jflex" beforeDir="false" afterPath="$PROJECT_DIR$/scanner.jflex" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -135,6 +130,19 @@
       <option name="presentableId" value="Default" />
       <updated>1794157124789</updated>
     </task>
+    <task id="LOCAL-00001" summary="agregue 5 requerimientos adicionales">
+      <option name="closed" value="true" />
+      <created>1794228061763</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1794228061763</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="agregue 5 requerimientos adicionales" />
+    <option name="LAST_COMMIT_MESSAGE" value="agregue 5 requerimientos adicionales" />
   </component>
 </project>
