@@ -44,7 +44,7 @@ public class Validador {
       return null;
     }
   }
-  }
+
 
   public PlanEntrenamiento.Medida carga(String texto, int linea) {
     PlanEntrenamiento.Medida medida = new PlanEntrenamiento.Medida(texto, linea);
