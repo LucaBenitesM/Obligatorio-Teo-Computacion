@@ -47,7 +47,9 @@ non terminal eols;
 start with plan;
 
 plan ::= eols encabezado:p rutinas:r
-  {: p.rutinas.addAll(r); parser.validador.completar(p); parser.plan = p; RESULT = p; :}
+    {: p.rutinas.addAll(r); parser.validador.completar(p);
+       Analisis.validarReferencias(p, parser.diagnosticos);
+       parser.plan = p; RESULT = p; :}
 ;
 
 encabezado ::= PLAN STRING:n EOL eols
